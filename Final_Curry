@@ -1,0 +1,79 @@
+import random
+three_point_pct = 0.35
+two_point_pct = 0.50
+free_throw_pct = 0.65
+offensive_rebound_pct = 0.25
+overtime_win_pct = 0.50
+starting_time = 30
+
+def attempt_shot(success_rate):
+    return random.random() < success_rate
+
+def three_point_strategy():
+    points_scored = 0
+    if attempt_shot(three_point_pct):
+        points_scored += 3
+        if random.random() < overtime_win_pct:
+            return True, points_scored + 2
+        else:
+            return False, points_scored
+    return False, points_scored
+
+def two_point_foul_strategy():
+    time_left = starting_time
+    score_diff = -2
+    points_scored = 0
+    possession = False
+
+    if not attempt_shot(two_point_pct):
+        return False, points_scored
+
+    points_scored += 2
+    time_left -= 5
+
+    while time_left > 0:
+        made_free_throws = 0
+        if attempt_shot(free_throw_pct):
+            made_free_throws += 1
+        if attempt_shot(free_throw_pct):
+            made_free_throws += 1
+
+        score_diff += made_free_throws
+        time_left -= 5
+
+        if random.random() < offensive_rebound_pct:
+            possession = True
+        else:
+            possession = False
+
+        if possession:
+            if attempt_shot(two_point_pct):
+                points_scored += 2
+                score_diff -= 2
+            time_left -= 5
+        else:
+            break
+
+    return score_diff <= 0, points_scored
+
+def run_simulation(strategy_function, trials):
+    wins = 0
+    total_points = 0
+    for _ in range(trials):
+        win, points = strategy_function()
+        if win:
+            wins += 1
+        total_points += points
+    win_rate = wins / trials
+    average_points = total_points / trials
+    return win_rate, average_points
+
+num_trials = 10000
+
+three_point_win_rate, three_point_avg_points = run_simulation(three_point_strategy, num_trials)
+two_point_win_rate, two_point_avg_points = run_simulation(two_point_foul_strategy, num_trials)
+
+print(f"Three-Point Strategy Win Rate: {three_point_win_rate:.2%}")
+print(f"Three-Point Strategy Average Points: {three_point_avg_points:.2f}")
+print(f"Two-Point + Foul Strategy Win Rate: {two_point_win_rate:.2%}")
+print(f"Two-Point + Foul Strategy Average Points: {two_point_avg_points:.2f}")
